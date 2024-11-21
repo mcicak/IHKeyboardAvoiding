@@ -23,10 +23,12 @@ import UIKit
     private static var avoidingViewUsesAutoLayout = false
     private static var triggerViews = [UIView]()
     private static var showingAnimationCount = 0
+    private static var keyboardDebounceWorkItem: DispatchWorkItem?
     
     public private(set) static var isKeyboardVisible = false
     public static var buffer: CGFloat = 0.0
     public static var paddingForCurrentAvoidingView: CGFloat = 0.0
+    public static var debounceTime = 0.0
     @objc public static var padding: CGFloat = 0.0 {
         willSet {
             if self.paddingForCurrentAvoidingView == newValue {
@@ -57,6 +59,18 @@ import UIKit
     }
     
     class func didChange(_ notification: Foundation.Notification) {
+        if debounceTime > 0.0 {
+            keyboardDebounceWorkItem?.cancel()
+                keyboardDebounceWorkItem = DispatchWorkItem {
+                    _didChange(notification)
+                }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.2, execute: keyboardDebounceWorkItem!)
+        } else {
+            _didChange(notification)
+        }
+    }
+    
+    private class func _didChange(_ notification: Foundation.Notification) {
         var isKeyBoardShowing = false
         // isKeyBoardShowing and is it merged and docked.
         
@@ -296,4 +310,3 @@ import UIKit
         }
     }
 }
-
